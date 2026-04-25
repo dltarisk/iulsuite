@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(node -e \":*)",
+      "Bash(npx supabase:*)",
+      "Bash(brew ls:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2e774e2c5a08b7e93466ad089dd1e86721e289cc npx supabase functions deploy pin-login --project-ref xjhtjvokuorgrmuzoyrc)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2e774e2c5a08b7e93466ad089dd1e86721e289cc npx supabase functions deploy hash-pin --project-ref xjhtjvokuorgrmuzoyrc)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_2e774e2c5a08b7e93466ad089dd1e86721e289cc npx supabase secrets set JWT_SECRET='7jzw/Vus0+MwZatEDSEM+ulEpt485PfPKgEHLW0ASEWApfBZkkuStrqfkAhLPYp8iTQMGf7srO6E/bz7f/8O+A==' --project-ref xjhtjvokuorgrmuzoyrc)",
+      "Bash(curl -s -X POST \"https://xjhtjvokuorgrmuzoyrc.supabase.co/functions/v1/pin-login\" -H \"Content-Type: application/json\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqaHRqdm9rdW9yZ3JtdXpveXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NjI4NzcsImV4cCI6MjA5MDIzODg3N30.S1lRzbY11IQ2nTYkHuNqaH2BixDAehSE45UGa120YEE\" -d '{\"\"agent_id\"\":\"\"a1000000-0000-0000-0000-000000000000\"\",\"\"pin\"\":\"\"7740\"\"}')",
+      "Bash(curl -s -X POST \"https://api.supabase.com/v1/projects/xjhtjvokuorgrmuzoyrc/database/query\" -H \"Authorization: Bearer sbp_2e774e2c5a08b7e93466ad089dd1e86721e289cc\" -H \"Content-Type: application/json\" -d '{\"\"query\"\": \"\"SELECT id, name, role FROM agents ORDER BY name;\"\"}')",
+      "Bash(curl -s -X POST \"https://api.supabase.com/v1/projects/xjhtjvokuorgrmuzoyrc/database/query\" -H \"Authorization: Bearer sbp_2e774e2c5a08b7e93466ad089dd1e86721e289cc\" -H \"Content-Type: application/json\" -d @-)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(PGPASSWORD=\"Sandra060615.\" psql -h aws-0-us-east-2.pooler.supabase.com -p 6543 -U postgres.civkbowyagijogqmnxcl -d postgres -c 'DROP POLICY IF EXISTS \"\"deals_read\"\" ON deals; CREATE POLICY \"\"deals_read\"\" ON deals FOR SELECT USING \\(true\\);')",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(curl -s 'https://xjhtjvokuorgrmuzoyrc.supabase.co/rest/v1/agents?select=id,name,role,active,agent_code,email&order=name' -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqaHRqdm9rdW9yZ3JtdXpveXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NjI4NzcsImV4cCI6MjA5MDIzODg3N30.S1lRzbY11IQ2nTYkHuNqaH2BixDAehSE45UGa120YEE')"
+    ]
+  }
+}

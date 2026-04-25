@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Insurance Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Nord Light color scheme
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#2e3440',     // Polar Night (text/headers)
+                        gold: '#d08770',     // Aurora orange (secondary CTA)
+                        emerald: {
+                            50: '#f3f6ee', 100: '#e6eedd', 200: '#cddcbb', 300: '#b4ca99',
+                            400: '#a3be8c', 500: '#a3be8c', 600: '#8ca873', 700: '#73905b',
+                            800: '#5b7447', 900: '#445634',
+                        },
+                        nord: {
+                            bg: '#eceff4', surface: '#e5e9f0', border: '#d8dee9',
+                            text: '#2e3440', subtext: '#4c566a',
+                            frost1: '#5e81ac', frost2: '#81a1c1', frost3: '#88c0d0', frost4: '#8fbcbb',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-nord-bg text-nord-text font-sans p-4 md:p-8">
+    <div class="max-w-5xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg border border-gray-100 relative">
+        <!-- HEADER & NAV -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b pb-4">
+            <div>
+                <h1 class="text-3xl font-bold text-navy" id="main_title">Client Pre-Application</h1>
+                <p class="text-gray-500 mt-2" id="main_subtitle">Complete all details for the client file.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex gap-4">
+                <select id="lang_toggle" class="border rounded p-2 text-sm bg-gray-50" onchange="toggleLanguage()">
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                </select>
+                <div class="flex bg-gray-100 p-1 rounded-lg">
+                    <button onclick="switchTab('app')" id="tab_app" class="px-4 py-2 rounded shadow bg-white text-navy font-bold text-sm">Application</button>
+                    <button onclick="switchTab('calc')" id="tab_calc" class="px-4 py-2 rounded text-gray-500 hover:text-navy font-bold text-sm">Calculator</button>
+                    <button onclick="window.location.href='/sales/'" id="tab_sales" class="px-4 py-2 rounded text-gray-500 hover:text-navy font-bold text-sm">Sales</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPLICATION TAB -->
+        <div id="view_app">
+            <form id="appForm" class="space-y-8">
+                <!-- 1. General Information -->
+                <section>
+                    <h2 class="text-xl font-semibold text-navy mb-4 border-l-4 border-emerald-500 pl-2" id="h_general">1. General Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium" id="lbl_plan">Plan</label>
+                            <select name="plan" class="w-full rounded border p-2 bg-gray-50">
+                                <option>IUL</option><option>Term 10</option><option>Term 15</option><option>Term 20</option><option>Term 25</option>
+                            </select></div>
+                        <div><label class="block text-sm font-medium" id="lbl_premium">Monthly Premium</label>
+                            <input type="text" name="monthly_premium" onfocus="unformatCurrency(this)" onblur="formatCurrency(this)" class="w-full rounded border p-2" required></div>
+                        <div><label class="block text-sm font-medium" id="lbl_db">Death Benefit</label>
+                            <input type="text" name="death_benefit" onfocus="unformatCurrency(this)" onblur="formatCurrency(this)" class="w-full rounded border p-2" required></div>
+                        <div><label class="block text-sm font-medium" id="lbl_fname">First Name</label>
+                            <input type="text" name="first_name" class="w-full rounded border p-2" required></div>
+                        <div><label class="block text-sm font-medium" id="lbl_lname">Last Name</label>
+                            <input type="text" name="last_name" class="w-full rounded border p-2" required></div>
+                        <div><label class="block text-sm font-medium" id="lbl_dob">Date of Birth</label>
+                            <input type="date" name="dob" class="w-full rounded border p-2" required></div>
+                        <div><label class="block text-sm font-medium" id="lbl_other_pol">Other life insurance policies?</label>
+                            <select name="has_other_policies" class="w-full rounded border p-2" onchange="toggleField(this.value, 'Yes', 'other_policy_div')">
+                                <option value="No">No</option><option value="Yes">Yes</option>
+                            </select></div>
+                        <div id="other_policy_div" class="hidden"><label class="block text-sm font-medium" id="lbl_other_pol_info">Other policy information</label>
+                            <input type="text" name="other_policies_info" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_us_cit">US Citizen?</label>
+                            <select name="us_citizen" class="w-full rounded border p-2"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                    </div>
+                </section>
+
+                <!-- 2. Personal Information -->
+                <section>
+                    <h2 class="text-xl font-semibold text-navy mb-4 border-l-4 border-emerald-500 pl-2" id="h_personal">2. Personal Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium" id="lbl_id_type">Verification Document</label>
+                            <select name="id_type" class="w-full rounded border p-2 bg-gray-50">
+                                <option>ITIN</option><option>SSN</option><option>Driver's License</option><option>Green Card</option><option>Passport</option>
+                            </select></div>
+                        <div><label class="block text-sm font-medium" id="lbl_id_num">Document Number</label>
+                            <input type="text" name="id_number" class="w-full rounded border p-2"></div>
+                        
+                        <div><label class="block text-sm font-medium" id="lbl_cob">Country of Birth</label>
+                            <input type="text" name="country_of_birth" class="w-full rounded border p-2"></div>
+                        <div></div> <!-- Empty spacer -->
+
+                        <div><label class="block text-sm font-medium" id="lbl_ht">Height</label><input type="text" name="height" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_wt">Weight (lbs)</label><input type="number" name="weight" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_occ">Occupation</label><input type="text" name="occupation" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_emp">Employer Name</label><input type="text" name="employer" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_has_dl">US Driver's License?</label>
+                            <select name="has_dl" class="w-full rounded border p-2" onchange="toggleField(this.value, 'Yes', 'dl_details')">
+                                <option value="No">No</option><option value="Yes">Yes</option>
+                            </select></div>
+                        <div id="dl_details" class="hidden grid grid-cols-2 gap-2 mt-2">
+                            <div><label class="block text-sm font-medium">State</label>
+                                <select name="dl_state" class="w-full rounded border p-2"><option>FL</option><option>TX</option><option>CA</option><option>NY</option><option>Other</option></select></div>
+                            <div><label class="block text-sm font-medium">License #</label><input type="text" name="dl_number" class="w-full rounded border p-2"></div>
+                        </div>
+                        <div class="md:col-span-2"><label class="block text-sm font-medium" id="lbl_addr">Address</label><input type="text" name="address" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_phone">Phone #</label><input type="tel" name="phone" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_email">Email</label><input type="email" name="email" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_salary">Approx. Annual Salary</label><input type="text" name="salary" onfocus="unformatCurrency(this)" onblur="formatCurrency(this)" class="w-full rounded border p-2"></div>
+                    </div>
+                </section>
+
+                <!-- 3. Policy Details -->
+                <section>
+                    <h2 class="text-xl font-semibold text-navy mb-4 border-l-4 border-emerald-500 pl-2" id="h_policy">3. Policy Details</h2>
+                    <div class="mb-6 border p-4 rounded bg-gray-50">
+                        <div class="flex justify-between mb-2"><label class="font-bold" id="lbl_bens">Beneficiaries</label><span id="pct_total" class="text-red-500 font-bold bg-white px-2 py-1 rounded">0%</span></div>
+                        <div id="bens_container" class="space-y-2"></div>
+                        <button type="button" onclick="addBen()" class="mt-2 text-emerald-600 font-bold text-sm" id="btn_add_ben">+ Add Beneficiary</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-medium" id="lbl_smoke">Do you smoke?</label>
+                            <select name="smoke" class="w-full rounded border p-2"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+                        <div></div>
+                        
+                        <div class="border p-2"><label class="block font-bold mb-1" id="lbl_dad">Father</label>
+                            <select name="father_status" class="w-full mb-1 border p-1" onchange="toggleField(this.value, 'Deceased', 'dad_reason')"><option>Living</option><option>Deceased</option></select>
+                            <input type="number" name="father_age" placeholder="Age" class="w-full mb-1 border p-1">
+                            <select id="dad_reason" name="father_cause" class="w-full border p-1 hidden"><option value="">Cause of Death...</option><option>Old Age</option><option>Accident</option><option>Illness</option><option>Injury</option></select>
+                        </div>
+                        <div class="border p-2"><label class="block font-bold mb-1" id="lbl_mom">Mother</label>
+                            <select name="mother_status" class="w-full mb-1 border p-1" onchange="toggleField(this.value, 'Deceased', 'mom_reason')"><option>Living</option><option>Deceased</option></select>
+                            <input type="number" name="mother_age" placeholder="Age" class="w-full mb-1 border p-1">
+                            <select id="mom_reason" name="mother_cause" class="w-full border p-1 hidden"><option value="">Cause of Death...</option><option>Old Age</option><option>Accident</option><option>Illness</option><option>Injury</option></select>
+                        </div>
+
+                        <div><label class="block text-sm font-medium" id="lbl_med">Medical Conditions</label>
+                            <select name="med_cond" class="w-full rounded border p-2" onchange="toggleField(this.value, 'Present', 'med_details')"><option>None</option><option>Present</option></select></div>
+                        <div id="med_details" class="hidden"><label class="block text-sm font-medium" id="lbl_med_det">Condition Details</label><input type="text" name="med_details" class="w-full rounded border p-2"></div>
+                        
+                        <div class="md:col-span-2 border-t pt-2 grid grid-cols-3 gap-2">
+                            <div><label class="block text-sm font-medium" id="lbl_doc_name">Doctor Name</label><input type="text" name="doc_name" class="w-full border p-2"></div>
+                            <div><label class="block text-sm font-medium" id="lbl_doc_fac">Facility</label><input type="text" name="doc_facility" class="w-full border p-2"></div>
+                            <div><label class="block text-sm font-medium" id="lbl_doc_date">Last Visit (MM/YYYY)</label><input type="text" name="doc_date" placeholder="10/2023" class="w-full border p-2"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Banking & Final -->
+                <section>
+                    <h2 class="text-xl font-semibold text-navy mb-4 border-l-4 border-emerald-500 pl-2" id="h_bank">4. Banking Verification</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div><label class="block text-sm font-medium" id="lbl_bank">Bank Name</label><input type="text" name="bank_name" class="w-full rounded border p-2"></div>
+                        <div><label class="block text-sm font-medium" id="lbl_routing">Routing Number</label>
+                            <input type="text" name="routing_number" id="routing_input" oninput="verifyRouting()" maxlength="9" class="w-full rounded border-2 border-gray-300 p-2 outline-none transition-colors">
+                            <span id="routing_msg" class="text-xs text-gray-500">Must be 9 digits</span></div>
+                        <div><label class="block text-sm font-medium" id="lbl_acct">Account Number</label><input type="text" name="account_number" class="w-full rounded border p-2"></div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium" id="lbl_notes">Notes / Comments</label>
+                        <textarea name="notes" rows="3" class="w-full rounded border p-2" placeholder="..."></textarea>
+                    </div>
+                    
+                    <hr class="my-6">
+                    <div>
+                        <label class="block text-sm font-medium mb-1" id="lbl_agent">Agent</label>
+                        <select name="recipient" class="w-full md:w-1/2 rounded border p-2 bg-gray-50">
+                            <!-- NOTE: Changed values back to strict emails so the mailing server doesn't reject them, 
+                                 or we split it in JS. Let's send clean data. -->
+                            <option value="Sandra Hernandez|sandrahernandezcapo1@gmail.com">Sandra Hernandez</option>
+                            <option value="Valentina|valentinamiami2025@gmail.com">Valentina</option>
+                            <option value="Karelin Marte|karelin@flowinternationalgroup.com">Karelin Marte</option>
+                            <option value="Yurii Valigurskyi|yurii.valigurskyi@gmail.com">Yurii Valigurskyi</option>
+                        </select>
+                    </div>
+                </section>
+
+                <div class="pt-4 flex items-center gap-4">
+                    <button type="submit" id="btn_submit" class="px-8 py-3 bg-emerald-500 text-white font-bold rounded shadow hover:bg-emerald-600">Submit</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- CALCULATOR TAB -->
+        <div id="view_calc" class="hidden">
+            <h2 class="text-2xl font-bold text-navy mb-4" id="c_title">Monthly Premium Calculator</h2>
+            <div class="bg-blue-50 p-6 rounded-lg border border-blue-100 mb-6">
+                <label class="block text-sm font-bold text-navy mb-2" id="c_lbl_income">Client's Monthly Income ($)</label>
+                <input type="text" id="calc_income" onfocus="unformatCurrency(this)" oninput="runCalc()" onblur="formatCurrency(this); runCalc()" class="w-full md:w-1/2 rounded border p-3 text-lg font-bold" placeholder="5000">
+            </div>
+
+            <!-- 4 PERCENTAGE CARDS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="calc_results">
+                <div class="bg-white border rounded p-4 text-center shadow-sm"><div class="text-sm text-gray-500 font-bold">20%</div><div id="res_20" class="text-xl font-bold text-navy mt-1">$0.00</div></div>
+                <div class="bg-white border rounded p-4 text-center shadow-sm border-emerald-500 border-2"><div class="text-sm text-emerald-600 font-bold">10%</div><div id="res_10" class="text-xl font-bold text-emerald-600 mt-1">$0.00</div></div>
+                <div class="bg-white border rounded p-4 text-center shadow-sm"><div class="text-sm text-gray-500 font-bold">7.5%</div><div id="res_7.5" class="text-xl font-bold text-navy mt-1">$0.00</div></div>
+                <div class="bg-white border rounded p-4 text-center shadow-sm"><div class="text-sm text-gray-500 font-bold">5%</div><div id="res_5" class="text-xl font-bold text-navy mt-1">$0.00</div></div>
+            </div>
+
+            <div class="border-t pt-6">
+                <label class="flex items-center gap-2 font-bold text-navy cursor-pointer">
+                    <input type="checkbox" id="show_comm" onchange="toggleField(this.checked, true, 'comm_panel'); runCalc()" class="w-5 h-5 rounded">
+                    <span id="c_lbl_show">Show Commission Details</span>
+                </label>
+
+                <div id="comm_panel" class="hidden mt-4 bg-gray-50 p-6 rounded border">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
+                        <div>
+                            <label class="block text-sm font-medium" id="c_lbl_base_prem">Base Premium</label>
+                            <select id="calc_base" onchange="toggleCustomPrem(); runCalc()" class="w-full border p-2 rounded">
+                                <option value="0.20">20%</option>
+                                <option value="0.10">10%</option>
+                                <option value="0.075">7.5%</option>
+                                <option value="0.05">5%</option>
+                                <option value="custom" id="opt_custom">Custom</option>
+                            </select>
+                        </div>
+                        
+                        <!-- NEW CUSTOM PREMIUM FIELD -->
+                        <div id="div_custom_prem" class="hidden">
+                            <label class="block text-sm font-medium" id="c_lbl_custom_prem">Custom Premium ($)</label>
+                            <input type="text" id="calc_custom_prem" onfocus="unformatCurrency(this)" oninput="runCalc()" onblur="formatCurrency(this); runCalc()" class="w-full border p-2 rounded" placeholder="150">
+                        </div>
+
+                        <div><label class="block text-sm font-medium" id="c_lbl_comp_rate">Compensation Rate</label>
+                            <select id="calc_comp" onchange="runCalc()" class="w-full border p-2 rounded">
+                                <option value="0.40" selected>40%</option><option value="0.45">45%</option><option value="0.50">50%</option><option value="0.55">55%</option><option value="0.60">60%</option><option value="0.65">65%</option><option value="0.70">70%</option><option value="0.75">75%</option><option value="0.80">80%</option><option value="0.85">85%</option><option value="0.90">90%</option><option value="0.95">95%</option><option value="1.00">100%</option>
+                            </select></div>
+                        <div class="flex items-center pb-2">
+                            <label class="flex items-center gap-2 text-sm font-bold text-red-600">
+                                <input type="checkbox" id="is_ny" onchange="runCalc()"> <span id="c_lbl_ny">Client in New York?</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="bg-navy text-white p-4 rounded-lg flex justify-between items-center">
+                        <div>
+                            <div class="text-sm text-gray-300" id="c_lbl_est">Estimated Commission</div>
+                            <div id="comm_total" class="text-3xl font-bold text-gold">$0.00</div>
+                        </div>
+                        <div class="text-right text-sm text-gray-300" id="comm_breakdown">
+                            Advance (75%)<br>Standard Comp
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUCCESS POPUP MODAL -->
+    <div id="successModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <svg class="h-10 w-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-navy mb-2" id="mod_title">Pre-app submitted</h3>
+            <p class="text-gray-500 mb-6" id="mod_desc">What would you like to do next?</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="goBackToApp()" class="w-full px-4 py-2 border-2 border-emerald-600 text-emerald-700 font-bold rounded-lg hover:bg-green-50 transition" id="mod_btn_back">
+                    Go Back to Pre-App
+                </button>
+                <button onclick="closeAppAndReset()" class="w-full px-4 py-2 bg-navy text-white font-bold rounded-lg hover:opacity-90 transition" id="mod_btn_close">
+                    Close Pre-App
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SUPABASE CONFIG ---
+        const SUPABASE_URL = 'https://xjhtjvokuorgrmuzoyrc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqaHRqdm9rdW9yZ3JtdXpveXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NjI4NzcsImV4cCI6MjA5MDIzODg3N30.S1lRzbY11IQ2nTYkHuNqaH2BixDAehSE45UGa120YEE';
+
+        // Optional URL param: ?agent=<agent_code> auto-selects dropdown but user can override
+        const urlParams = new URLSearchParams(window.location.search);
+        const agentCodeFromUrl = urlParams.get('agent') || '';
+
+        // Load agents from Supabase to populate dropdown.
+        // Source of truth for pre-app assignment = whatever the user picks here.
+        async function loadAgents() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/agents?active=eq.true&role=neq.admin&select=id,name,agent_code,email&order=name`, {
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+                const agents = await res.json();
+                const sel = document.querySelector('select[name="recipient"]');
+                sel.innerHTML = '<option value="">Select Agent...</option>';
+                agents.forEach(a => {
+                    const opt = document.createElement('option');
+                    // Format: name|email|agent_code|id — all fields needed for routing & portal linking
+                    opt.value = `${a.name}|${a.email || ''}|${a.agent_code || ''}|${a.id}`;
+                    opt.textContent = a.name;
+                    if (agentCodeFromUrl && a.agent_code && a.agent_code === agentCodeFromUrl) {
+                        opt.selected = true;
+                    }
+                    sel.appendChild(opt);
+                });
+            } catch(e) {
+                console.error('Failed to load agents:', e);
+            }
+        }
+        loadAgents();
+
+        // Save pre-app to Supabase.
+        // Assignment is driven ENTIRELY by the recipient dropdown selection.
+        async function saveToSupabase(formData) {
+            try {
+                const recipientParts = (formData.recipient || '').split('|');
+                const agentCode = recipientParts[2] || null;
+                const agentId = recipientParts[3] || null;
+
+                const premiumStr = (formData.monthly_premium || '').replace(/[^\d.]/g, '');
+                const payload = {
+                    agent_id: agentId || null,
+                    agent_code: agentCode || null,
+                    form_data: formData,
+                    client_name: `${formData.first_name || ''} ${formData.last_name || ''}`.trim(),
+                    client_phone: formData.phone || null,
+                    client_email: formData.email || null,
+                    plan: formData.plan || null,
+                    monthly_premium: premiumStr ? parseFloat(premiumStr) : null,
+                };
+
+                await fetch(`${SUPABASE_URL}/rest/v1/preapplications`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal',
+                    },
+                    body: JSON.stringify(payload),
+                });
+            } catch(e) {
+                console.error('Failed to save to Supabase:', e);
+            }
+        }
+
+        // --- TRANSLATION ---
+        const dict = {
+            en: {
+                tab_app: "Application",
+                tab_calc: "Calculator",
+                main_title: "Client Pre-Application", main_subtitle: "Complete all details for the client file.",
+                h_general: "1. General Information", lbl_plan: "Plan", lbl_premium: "Monthly Premium", lbl_db: "Death Benefit", lbl_fname: "First Name", lbl_lname: "Last Name", lbl_dob: "Date of Birth", lbl_other_pol: "Other life insurance policies?", lbl_other_pol_info: "Other policy information", lbl_us_cit: "US Citizen?",
+                h_personal: "2. Personal Information", lbl_id_type: "Verification Document", lbl_id_num: "Document Number", lbl_cob: "Country of Birth", lbl_ht: "Height", lbl_wt: "Weight (lbs)", lbl_occ: "Occupation", lbl_emp: "Employer Name", lbl_has_dl: "US Driver's License?", lbl_addr: "Address", lbl_phone: "Phone #", lbl_email: "Email", lbl_salary: "Approx. Annual Salary",
+                h_policy: "3. Policy Details", lbl_bens: "Beneficiaries", btn_add_ben: "+ Add Beneficiary", lbl_smoke: "Do you smoke?", lbl_dad: "Father", lbl_mom: "Mother", lbl_med: "Medical Conditions", lbl_med_det: "Condition Details", lbl_doc_name: "Doctor Name", lbl_doc_fac: "Facility", lbl_doc_date: "Last Visit (MM/YYYY)",
+                h_bank: "4. Banking Verification", lbl_bank: "Bank Name", lbl_routing: "Routing Number", lbl_acct: "Account Number", lbl_notes: "Notes / Comments", lbl_agent: "Agent", btn_submit: "Submit",
+                c_title: "Monthly Premium Calculator", c_lbl_income: "Client's Monthly Income ($)", c_lbl_show: "Show Commission Details", c_lbl_base_prem: "Base Premium", c_lbl_custom_prem: "Custom Premium ($)", opt_custom: "Custom", c_lbl_comp_rate: "Compensation Rate", c_lbl_ny: "Client in New York?", c_lbl_est: "Estimated Commission",
+                mod_title: "Pre-app submitted", mod_desc: "What would you like to do next?", mod_btn_back: "Go Back to Pre-App", mod_btn_close: "Close Pre-App"
+            },
+            es: {
+                tab_app: "Solicitud",
+                tab_calc: "Calculadora",
+                main_title: "Pre-Solicitud de Cliente", main_subtitle: "Complete todos los detalles para el archivo del cliente.",
+                h_general: "1. Información General", lbl_plan: "Plan", lbl_premium: "Prima Mensual", lbl_db: "Beneficio por Fallecimiento", lbl_fname: "Nombre", lbl_lname: "Apellido", lbl_dob: "Fecha de Nacimiento", lbl_other_pol: "¿Otras pólizas de seguro de vida?", lbl_other_pol_info: "Información de otra póliza", lbl_us_cit: "¿Ciudadano de EE. UU.?",
+                h_personal: "2. Información Personal", lbl_id_type: "Documento de Verificación", lbl_id_num: "Número de Documento", lbl_cob: "País de Nacimiento", lbl_ht: "Estatura", lbl_wt: "Peso (lbs)", lbl_occ: "Ocupación", lbl_emp: "Nombre del Empleador", lbl_has_dl: "¿Licencia de conducir de EE. UU.?", lbl_addr: "Dirección", lbl_phone: "Teléfono", lbl_email: "Correo Electrónico", lbl_salary: "Salario Anual Aprox.",
+                h_policy: "3. Detalles de la Póliza", lbl_bens: "Beneficiarios", btn_add_ben: "+ Agregar Beneficiario", lbl_smoke: "¿Fuma?", lbl_dad: "Padre", lbl_mom: "Madre", lbl_med: "Condiciones Médicas", lbl_med_det: "Detalles de la Condición", lbl_doc_name: "Nombre del Doctor", lbl_doc_fac: "Clínica", lbl_doc_date: "Última Visita (Mes/Año)",
+                h_bank: "4. Verificación Bancaria", lbl_bank: "Nombre del Banco", lbl_routing: "Número de Ruta", lbl_acct: "Número de Cuenta", lbl_notes: "Notas / Comentarios", lbl_agent: "Agente", btn_submit: "Enviar",
+                c_title: "Calculadora de Prima Mensual", c_lbl_income: "Ingreso Mensual del Cliente ($)", c_lbl_show: "Mostrar Detalles de Comisión", c_lbl_base_prem: "Prima Base", c_lbl_custom_prem: "Prima Personalizada ($)", opt_custom: "Personalizado", c_lbl_comp_rate: "Tasa de Compensación", c_lbl_ny: "¿Cliente en Nueva York?", c_lbl_est: "Comisión Estimada",
+                mod_title: "Pre-solicitud enviada", mod_desc: "¿Qué le gustaría hacer a continuación?", mod_btn_back: "Volver a la pre-solicitud", mod_btn_close: "Cerrar pre-solicitud"
+            }
+        };
+
+        function toggleLanguage() {
+            const lang = document.getElementById('lang_toggle').value;
+            for (let id in dict[lang]) {
+                const el = document.getElementById(id);
+                if(el) el.innerText = dict[lang][id];
+            }
+            // Update button if it's currently showing default state
+            const btn = document.getElementById('btn_submit');
+            if(!btn.disabled) {
+                btn.innerText = lang === 'es' ? "Enviar" : "Submit";
+            }
+            runCalc(); // Auto-update dynamic Spanish text in the breakdown box
+        }
+
+        // --- UI UTILS ---
+        function switchTab(tab) {
+            document.getElementById('view_app').classList.toggle('hidden', tab !== 'app');
+            document.getElementById('view_calc').classList.toggle('hidden', tab !== 'calc');
+            
+            // Keep translated text intact, just swap classes
+            const btnApp = document.getElementById('tab_app');
+            const btnCalc = document.getElementById('tab_calc');
+            
+            if (tab === 'app') {
+                btnApp.classList.add('shadow', 'bg-white', 'text-navy');
+                btnApp.classList.remove('text-gray-500', 'hover:text-navy');
+                btnCalc.classList.remove('shadow', 'bg-white', 'text-navy');
+                btnCalc.classList.add('text-gray-500', 'hover:text-navy');
+            } else {
+                btnCalc.classList.add('shadow', 'bg-white', 'text-navy');
+                btnCalc.classList.remove('text-gray-500', 'hover:text-navy');
+                btnApp.classList.remove('shadow', 'bg-white', 'text-navy');
+                btnApp.classList.add('text-gray-500', 'hover:text-navy');
+            }
+        }
+
+        function toggleField(val, triggerVal, targetId) {
+            document.getElementById(targetId).classList.toggle('hidden', val !== triggerVal);
+        }
+
+        function formatCurrency(input) {
+            let val = input.value.replace(/[^\d.]/g, '');
+            if(val) {
+                let num = parseFloat(val);
+                input.value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+            }
+        }
+
+        function unformatCurrency(input) {
+            if (!input.value) return;
+            let val = input.value.replace(/[^\d.]/g, '');
+            if (val) {
+                input.value = parseFloat(val).toString();
+            }
+        }
+
+        function parseCurrency(str) { return parseFloat(str.replace(/[^\d.]/g, '')) || 0; }
+
+        // --- BENEFICIARIES ---
+        let bCount = 0;
+        function addBen() {
+            bCount++;
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center bg-white p-2 border rounded";
+            div.id = `b_r_${bCount}`;
+            div.innerHTML = `
+                <input type="text" name="ben_n_${bCount}" placeholder="Name / Nombre" class="border p-1 flex-1 text-sm">
+                <input type="date" name="ben_d_${bCount}" class="border p-1 w-32 text-sm">
+                <input type="text" name="ben_r_${bCount}" placeholder="Rel." class="border p-1 w-24 text-sm">
+                <input type="number" name="ben_p_${bCount}" placeholder="%" oninput="calcPct()" class="b-pct border p-1 w-16 text-sm" max="100">
+                <button type="button" onclick="document.getElementById('b_r_${bCount}').remove(); calcPct()" class="text-red-500 font-bold">&times;</button>
+            `;
+            document.getElementById('bens_container').appendChild(div);
+            const pcts = document.querySelectorAll('.b-pct');
+            if (pcts.length > 0) {
+                let eq = Math.floor(100 / pcts.length);
+                let rem = 100 - (eq * pcts.length);
+                pcts.forEach((p, i) => p.value = eq + (i===0?rem:0));
+                calcPct();
+            }
+        }
+        function calcPct() {
+            let t = Array.from(document.querySelectorAll('.b-pct')).reduce((sum, el) => sum + (Number(el.value)||0), 0);
+            let s = document.getElementById('pct_total');
+            s.innerText = t + '%';
+            s.className = t===100 ? "text-emerald-600 font-bold bg-green-100 px-2 py-1 rounded" : "text-red-500 font-bold bg-red-100 px-2 py-1 rounded";
+            return t;
+        }
+        addBen();
+
+        // --- ROUTING VALIDATOR ---
+        function verifyRouting() {
+            const el = document.getElementById('routing_input');
+            const msg = document.getElementById('routing_msg');
+            const val = el.value.replace(/\D/g, '');
+            el.value = val;
+            el.classList.remove('border-gray-300', 'border-red-500', 'border-yellow-500', 'border-green-500');
+            if (val.length === 0) { el.classList.add('border-gray-300'); msg.innerText="Must be 9 digits"; msg.className="text-xs text-gray-500"; return; }
+            if (val.length !== 9) { el.classList.add('border-yellow-500'); msg.innerText= document.getElementById('lang_toggle').value==='es'?"Deben ser 9 dígitos":"Length must be 9 digits"; msg.className="text-xs text-yellow-600"; return; }
+            let n = 0;
+            for (let i = 0; i < 9; i+=3) n += parseInt(val.charAt(i), 10) * 3 + parseInt(val.charAt(i+1), 10) * 7 + parseInt(val.charAt(i+2), 10);
+            if (n !== 0 && n % 10 === 0) {
+                el.classList.add('border-green-500'); msg.innerText= document.getElementById('lang_toggle').value==='es'?"Válida":"Valid Routing #"; msg.className="text-xs text-green-600";
+            } else {
+                el.classList.add('border-red-500'); msg.innerText= document.getElementById('lang_toggle').value==='es'?"Inválida":"Invalid Checksum"; msg.className="text-xs text-red-600";
+            }
+        }
+
+        // --- CALCULATOR ---
+        function toggleCustomPrem() {
+            let val = document.getElementById('calc_base').value;
+            document.getElementById('div_custom_prem').classList.toggle('hidden', val !== 'custom');
+        }
+
+        function runCalc() {
+            let incStr = document.getElementById('calc_income').value;
+            let i = parseCurrency(incStr);
+            let f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+            
+            // 4 CARDS
+            document.getElementById('res_20').innerText = f.format(i * 0.20);
+            document.getElementById('res_10').innerText = f.format(i * 0.10);
+            document.getElementById('res_7.5').innerText = f.format(i * 0.075);
+            document.getElementById('res_5').innerText = f.format(i * 0.05);
+
+            if (document.getElementById('show_comm').checked) {
+                let baseVal = document.getElementById('calc_base').value;
+                let moPrem = 0;
+                
+                if (baseVal === 'custom') {
+                    moPrem = parseCurrency(document.getElementById('calc_custom_prem').value) || 0;
+                } else {
+                    moPrem = i * parseFloat(baseVal);
+                }
+
+                let isNY = document.getElementById('is_ny').checked;
+                let comp = isNY ? 1.00 : parseFloat(document.getElementById('calc_comp').value);
+                let adv = isNY ? 0.50 : 0.75; // NY is 50% upfront
+                
+                let comm = (moPrem * 12 * comp) * adv;
+                document.getElementById('comm_total').innerText = f.format(comm);
+                
+                let lang = document.getElementById('lang_toggle').value;
+                if (isNY) {
+                    document.getElementById('comm_breakdown').innerHTML = lang === 'es' ? "Regla NY: 100% Comp<br>50% Adelanto, 50% Anivers." : "NY Rule: 100% Comp<br>50% Upfront, 50% Anniversary";
+                } else {
+                    document.getElementById('comm_breakdown').innerHTML = lang === 'es' ? "Adelanto (75%)<br>Comp. Estándar" : "Advance (75%)<br>Standard Comp";
+                }
+            }
+        }
+
+        // --- SUBMIT & MODAL ---
+        document.getElementById('appForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(calcPct() !== 100) { alert(document.getElementById('lang_toggle').value==='es' ? 'Los beneficiarios deben sumar 100%' : 'Beneficiaries must equal exactly 100%.'); return; }
+            
+            const btn = document.getElementById('btn_submit');
+            btn.innerText = document.getElementById('lang_toggle').value==='es' ? "Enviando..." : "Submitting..."; 
+            btn.disabled = true;
+            
+            const data = Object.fromEntries(new FormData(e.target));
+            data.language = document.getElementById('lang_toggle').value;
+
+            // FIX: Parse recipient field for Make so the email logic doesn't break
+            if (data.recipient) {
+                const parts = data.recipient.split('|');
+                data.recipient_name = parts[0] || '';
+                data.recipient_email = parts[1] || '';
+            }
+
+            // FIX: Array map beneficiaries for Make 
+            let beneficiariesData = [];
+            for (let i = 1; i <= bCount; i++) {
+                if (data[`ben_n_${i}`]) {
+                    beneficiariesData.push({
+                        name: data[`ben_n_${i}`],
+                        relationship: data[`ben_r_${i}`],
+                        dob: data[`ben_d_${i}`],
+                        percentage: data[`ben_p_${i}`]
+                    });
+                }
+            }
+            data.beneficiariesList = beneficiariesData;
+            
+            try {
+                // Send to Make webhook (email)
+                const webhookPromise = fetch("https://hook.us2.make.com/76pc2czxql6bkq003adnjzjonm5x2ldf", {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                });
+
+                // Save to Supabase (portal)
+                const supabasePromise = saveToSupabase(data);
+
+                await Promise.all([webhookPromise, supabasePromise]);
+                document.getElementById('successModal').classList.remove('hidden');
+            } catch(er) {
+                console.error('Submit error:', er);
+                btn.innerText = "Error"; btn.className = "px-8 py-3 bg-red-600 text-white font-bold rounded shadow";
+                btn.disabled = false;
+            }
+        });
+
+        function goBackToApp() {
+            document.getElementById('successModal').classList.add('hidden');
+            const btn = document.getElementById('btn_submit');
+            btn.disabled = false;
+            btn.innerText = document.getElementById('lang_toggle').value === 'es' ? "Enviar" : "Submit";
+        }
+
+        function closeAppAndReset() {
+            window.location.reload();
+        }
+
+        // Initialize translation on load in case browser caches dropdown
+        toggleLanguage();
+    </script>
+</body>
+</html>
