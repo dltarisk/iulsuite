@@ -121,9 +121,19 @@
                 <section>
                     <h2 class="text-xl font-semibold text-navy mb-4 border-l-4 border-emerald-500 pl-2" id="h_policy">3. Policy Details</h2>
                     <div class="mb-6 border p-4 rounded bg-gray-50">
-                        <div class="flex justify-between mb-2"><label class="font-bold" id="lbl_bens">Beneficiaries</label><span id="pct_total" class="text-red-500 font-bold bg-white px-2 py-1 rounded">0%</span></div>
+                        <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
+                            <label class="font-bold" id="lbl_bens">Beneficiaries</label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400" id="lbl_pct_hint">% share must total 100</span>
+                                <span id="pct_total" class="text-red-500 font-bold bg-white px-2 py-1 rounded border border-red-200 text-sm">0%</span>
+                            </div>
+                        </div>
                         <div id="bens_container" class="space-y-2"></div>
-                        <button type="button" onclick="addBen()" class="mt-2 text-emerald-600 font-bold text-sm" id="btn_add_ben">+ Add Beneficiary</button>
+                        <div id="ben_error" class="hidden mt-2 p-3 bg-red-50 border border-red-300 rounded text-sm text-red-700"></div>
+                        <div class="flex gap-3 mt-3">
+                            <button type="button" onclick="addBen()" class="text-emerald-600 font-bold text-sm" id="btn_add_ben">+ Add Beneficiary</button>
+                            <button type="button" onclick="equalSplit()" class="text-xs text-nord-subtext bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded font-medium" id="btn_split">÷ Split Equally</button>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -184,7 +194,8 @@
                     </div>
                 </section>
 
-                <div class="pt-4 flex items-center gap-4">
+                <div class="pt-4 space-y-3">
+                    <div id="submit_error" class="hidden p-3 bg-red-50 border border-red-300 rounded text-sm text-red-700"></div>
                     <button type="submit" id="btn_submit" class="px-8 py-3 bg-emerald-500 text-white font-bold rounded shadow hover:bg-emerald-600">Submit</button>
                 </div>
             </form>
@@ -354,7 +365,7 @@
                 main_title: "Client Pre-Application", main_subtitle: "Complete all details for the client file.",
                 h_general: "1. General Information", lbl_plan: "Plan", lbl_premium: "Monthly Premium", lbl_db: "Death Benefit", lbl_fname: "First Name", lbl_lname: "Last Name", lbl_dob: "Date of Birth", lbl_other_pol: "Other life insurance policies?", lbl_other_pol_info: "Other policy information", lbl_us_cit: "US Citizen?",
                 h_personal: "2. Personal Information", lbl_id_type: "Verification Document", lbl_id_num: "Document Number", lbl_cob: "Country of Birth", lbl_ht: "Height", lbl_wt: "Weight (lbs)", lbl_occ: "Occupation", lbl_emp: "Employer Name", lbl_has_dl: "US Driver's License?", lbl_addr: "Address", lbl_phone: "Phone #", lbl_email: "Email", lbl_salary: "Approx. Annual Salary",
-                h_policy: "3. Policy Details", lbl_bens: "Beneficiaries", btn_add_ben: "+ Add Beneficiary", lbl_smoke: "Do you smoke?", lbl_dad: "Father", lbl_mom: "Mother", lbl_med: "Medical Conditions", lbl_med_det: "Condition Details", lbl_doc_name: "Doctor Name", lbl_doc_fac: "Facility", lbl_doc_date: "Last Visit (MM/YYYY)",
+                h_policy: "3. Policy Details", lbl_bens: "Beneficiaries", btn_add_ben: "+ Add Beneficiary", btn_split: "÷ Split Equally", lbl_pct_hint: "% share must total 100", lbl_smoke: "Do you smoke?", lbl_dad: "Father", lbl_mom: "Mother", lbl_med: "Medical Conditions", lbl_med_det: "Condition Details", lbl_doc_name: "Doctor Name", lbl_doc_fac: "Facility", lbl_doc_date: "Last Visit (MM/YYYY)",
                 h_bank: "4. Banking Verification", lbl_bank: "Bank Name", lbl_routing: "Routing Number", lbl_acct: "Account Number", lbl_notes: "Notes / Comments", lbl_agent: "Agent", btn_submit: "Submit",
                 c_title: "Monthly Premium Calculator", c_lbl_income: "Client's Monthly Income ($)", c_lbl_show: "Show Commission Details", c_lbl_base_prem: "Base Premium", c_lbl_custom_prem: "Custom Premium ($)", opt_custom: "Custom", c_lbl_comp_rate: "Compensation Rate", c_lbl_ny: "Client in New York?", c_lbl_est: "Estimated Commission",
                 mod_title: "Pre-app submitted", mod_desc: "What would you like to do next?", mod_btn_back: "Go Back to Pre-App", mod_btn_close: "Close Pre-App"
@@ -365,7 +376,7 @@
                 main_title: "Pre-Solicitud de Cliente", main_subtitle: "Complete todos los detalles para el archivo del cliente.",
                 h_general: "1. Información General", lbl_plan: "Plan", lbl_premium: "Prima Mensual", lbl_db: "Beneficio por Fallecimiento", lbl_fname: "Nombre", lbl_lname: "Apellido", lbl_dob: "Fecha de Nacimiento", lbl_other_pol: "¿Otras pólizas de seguro de vida?", lbl_other_pol_info: "Información de otra póliza", lbl_us_cit: "¿Ciudadano de EE. UU.?",
                 h_personal: "2. Información Personal", lbl_id_type: "Documento de Verificación", lbl_id_num: "Número de Documento", lbl_cob: "País de Nacimiento", lbl_ht: "Estatura", lbl_wt: "Peso (lbs)", lbl_occ: "Ocupación", lbl_emp: "Nombre del Empleador", lbl_has_dl: "¿Licencia de conducir de EE. UU.?", lbl_addr: "Dirección", lbl_phone: "Teléfono", lbl_email: "Correo Electrónico", lbl_salary: "Salario Anual Aprox.",
-                h_policy: "3. Detalles de la Póliza", lbl_bens: "Beneficiarios", btn_add_ben: "+ Agregar Beneficiario", lbl_smoke: "¿Fuma?", lbl_dad: "Padre", lbl_mom: "Madre", lbl_med: "Condiciones Médicas", lbl_med_det: "Detalles de la Condición", lbl_doc_name: "Nombre del Doctor", lbl_doc_fac: "Clínica", lbl_doc_date: "Última Visita (Mes/Año)",
+                h_policy: "3. Detalles de la Póliza", lbl_bens: "Beneficiarios", btn_add_ben: "+ Agregar Beneficiario", btn_split: "÷ Dividir Igual", lbl_pct_hint: "La suma de % debe ser 100", lbl_smoke: "¿Fuma?", lbl_dad: "Padre", lbl_mom: "Madre", lbl_med: "Condiciones Médicas", lbl_med_det: "Detalles de la Condición", lbl_doc_name: "Nombre del Doctor", lbl_doc_fac: "Clínica", lbl_doc_date: "Última Visita (Mes/Año)",
                 h_bank: "4. Verificación Bancaria", lbl_bank: "Nombre del Banco", lbl_routing: "Número de Ruta", lbl_acct: "Número de Cuenta", lbl_notes: "Notas / Comentarios", lbl_agent: "Agente", btn_submit: "Enviar",
                 c_title: "Calculadora de Prima Mensual", c_lbl_income: "Ingreso Mensual del Cliente ($)", c_lbl_show: "Mostrar Detalles de Comisión", c_lbl_base_prem: "Prima Base", c_lbl_custom_prem: "Prima Personalizada ($)", opt_custom: "Personalizado", c_lbl_comp_rate: "Tasa de Compensación", c_lbl_ny: "¿Cliente en Nueva York?", c_lbl_est: "Comisión Estimada",
                 mod_title: "Pre-solicitud enviada", mod_desc: "¿Qué le gustaría hacer a continuación?", mod_btn_back: "Volver a la pre-solicitud", mod_btn_close: "Cerrar pre-solicitud"
@@ -437,27 +448,54 @@
             const div = document.createElement('div');
             div.className = "flex gap-2 items-center bg-white p-2 border rounded";
             div.id = `b_r_${bCount}`;
+            // % input is required — no submit until all are filled and total = 100
             div.innerHTML = `
-                <input type="text" name="ben_n_${bCount}" placeholder="Name / Nombre" class="border p-1 flex-1 text-sm">
-                <input type="date" name="ben_d_${bCount}" class="border p-1 w-32 text-sm">
-                <input type="text" name="ben_r_${bCount}" placeholder="Rel." class="border p-1 w-24 text-sm">
-                <input type="number" name="ben_p_${bCount}" placeholder="%" oninput="calcPct()" class="b-pct border p-1 w-16 text-sm" max="100">
-                <button type="button" onclick="document.getElementById('b_r_${bCount}').remove(); calcPct()" class="text-red-500 font-bold">&times;</button>
+                <input type="text" name="ben_n_${bCount}" placeholder="Name *" class="border p-1 flex-1 text-sm rounded" required>
+                <input type="date" name="ben_d_${bCount}" class="border p-1 w-32 text-sm rounded">
+                <input type="text" name="ben_r_${bCount}" placeholder="Rel." class="border p-1 w-24 text-sm rounded">
+                <input type="number" name="ben_p_${bCount}" placeholder="% *" oninput="calcPct()" min="1" max="100"
+                    class="b-pct border p-1 w-16 text-sm rounded text-center font-bold" required>
+                <button type="button" onclick="removeBen('b_r_${bCount}')" class="text-red-400 hover:text-red-600 font-bold text-lg leading-none">&times;</button>
             `;
             document.getElementById('bens_container').appendChild(div);
+            // Auto-suggest equal split whenever a row is added
+            equalSplit();
+        }
+        function removeBen(rowId) {
+            const el = document.getElementById(rowId);
+            if (el) el.remove();
+            calcPct();
+            // Re-suggest equal split after removal
+            equalSplit();
+        }
+        function equalSplit() {
             const pcts = document.querySelectorAll('.b-pct');
             if (pcts.length > 0) {
                 let eq = Math.floor(100 / pcts.length);
                 let rem = 100 - (eq * pcts.length);
-                pcts.forEach((p, i) => p.value = eq + (i===0?rem:0));
+                pcts.forEach((p, i) => { p.value = eq + (i === 0 ? rem : 0); });
                 calcPct();
             }
         }
         function calcPct() {
-            let t = Array.from(document.querySelectorAll('.b-pct')).reduce((sum, el) => sum + (Number(el.value)||0), 0);
-            let s = document.getElementById('pct_total');
+            const inputs = Array.from(document.querySelectorAll('.b-pct'));
+            let t = inputs.reduce((sum, el) => sum + (Number(el.value) || 0), 0);
+            const s = document.getElementById('pct_total');
+            const isOk = t === 100;
             s.innerText = t + '%';
-            s.className = t===100 ? "text-emerald-600 font-bold bg-green-100 px-2 py-1 rounded" : "text-red-500 font-bold bg-red-100 px-2 py-1 rounded";
+            s.className = isOk
+                ? "text-emerald-700 font-bold bg-emerald-100 px-2 py-1 rounded border border-emerald-200 text-sm"
+                : "text-red-600 font-bold bg-red-100 px-2 py-1 rounded border border-red-200 text-sm";
+            // Highlight individual % inputs
+            inputs.forEach(el => {
+                el.classList.toggle('border-red-400', !isOk);
+                el.classList.toggle('border-gray-300', isOk);
+            });
+            // Hide inline error if fixed
+            if (isOk) {
+                const errEl = document.getElementById('ben_error');
+                if (errEl) errEl.classList.add('hidden');
+            }
             return t;
         }
         addBen();
@@ -523,38 +561,76 @@
             }
         }
 
+        // Show inline beneficiary error and scroll to it
+        function showBenError(msg) {
+            const lang = document.getElementById('lang_toggle').value;
+            const el = document.getElementById('ben_error');
+            el.innerHTML = `<strong>${lang === 'es' ? '⚠️ Error de beneficiarios' : '⚠️ Beneficiary error'}:</strong> ${msg}`;
+            el.classList.remove('hidden');
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Also highlight pct_total
+            calcPct();
+        }
+
         // --- SUBMIT & MODAL ---
         document.getElementById('appForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(calcPct() !== 100) { alert(document.getElementById('lang_toggle').value==='es' ? 'Los beneficiarios deben sumar 100%' : 'Beneficiaries must equal exactly 100%.'); return; }
-            
-            const btn = document.getElementById('btn_submit');
-            btn.innerText = document.getElementById('lang_toggle').value==='es' ? "Enviando..." : "Submitting..."; 
-            btn.disabled = true;
-            
-            const data = Object.fromEntries(new FormData(e.target));
-            data.language = document.getElementById('lang_toggle').value;
+            const lang = document.getElementById('lang_toggle').value;
 
-            // FIX: Parse recipient field for Make so the email logic doesn't break
+            // Beneficiary validation
+            const pctTotal = calcPct();
+            const benInputs = document.querySelectorAll('.b-pct');
+            const emptyPcts = Array.from(benInputs).filter(el => !el.value || Number(el.value) <= 0);
+
+            if (emptyPcts.length > 0) {
+                emptyPcts.forEach(el => el.classList.add('border-red-400', 'bg-red-50'));
+                showBenError(lang === 'es'
+                    ? `Faltan porcentajes. Ingresa el % para cada beneficiario (total debe ser 100%).`
+                    : `Missing percentages. Enter a % share for every beneficiary — total must equal 100%.`
+                );
+                return;
+            }
+            if (pctTotal !== 100) {
+                showBenError(lang === 'es'
+                    ? `Los porcentajes suman ${pctTotal}% — deben sumar exactamente 100%. Usa "÷ Dividir Igual" para ayudarte.`
+                    : `Percentages add up to ${pctTotal}% — they must equal exactly 100%. Use "÷ Split Equally" to help.`
+                );
+                return;
+            }
+
+            // Hide any previous error
+            document.getElementById('ben_error').classList.add('hidden');
+            document.getElementById('submit_error').classList.add('hidden');
+
+            const btn = document.getElementById('btn_submit');
+            btn.innerText = lang === 'es' ? "Enviando..." : "Submitting...";
+            btn.disabled = true;
+
+            const data = Object.fromEntries(new FormData(e.target));
+            data.language = lang;
+
+            // Parse recipient field
             if (data.recipient) {
                 const parts = data.recipient.split('|');
                 data.recipient_name = parts[0] || '';
                 data.recipient_email = parts[1] || '';
             }
 
-            // FIX: Array map beneficiaries for Make 
-            let beneficiariesData = [];
-            for (let i = 1; i <= bCount; i++) {
-                if (data[`ben_n_${i}`]) {
-                    beneficiariesData.push({
-                        name: data[`ben_n_${i}`],
-                        relationship: data[`ben_r_${i}`],
-                        dob: data[`ben_d_${i}`],
-                        percentage: data[`ben_p_${i}`]
-                    });
-                }
-            }
-            data.beneficiariesList = beneficiariesData;
+            // Build beneficiariesList by scanning actual form data keys — robust against removals/gaps
+            const benNameKeys = Object.keys(data)
+                .filter(k => k.startsWith('ben_n_') && data[k] && data[k].trim())
+                .sort((a, b) => parseInt(a.slice(6)) - parseInt(b.slice(6)));
+            data.beneficiariesList = benNameKeys.map(k => {
+                const idx = k.slice(6);
+                return {
+                    name: data[`ben_n_${idx}`],
+                    relationship: data[`ben_r_${idx}`] || '',
+                    dob: data[`ben_d_${idx}`] || '',
+                    percentage: data[`ben_p_${idx}`] || '',
+                };
+            });
+            // Keep total count for reference
+            data.beneficiary_count = data.beneficiariesList.length;
             
             try {
                 // Send to Make webhook (email)
@@ -569,7 +645,14 @@
                 document.getElementById('successModal').classList.remove('hidden');
             } catch(er) {
                 console.error('Submit error:', er);
-                btn.innerText = "Error"; btn.className = "px-8 py-3 bg-red-600 text-white font-bold rounded shadow";
+                const submitErr = document.getElementById('submit_error');
+                const isEs = document.getElementById('lang_toggle').value === 'es';
+                submitErr.innerHTML = isEs
+                    ? `<strong>Error al enviar.</strong> Por favor intenta de nuevo. (${er.message || 'Error de red'})`
+                    : `<strong>Submission failed.</strong> Please try again. (${er.message || 'Network error'})`;
+                submitErr.classList.remove('hidden');
+                btn.innerText = isEs ? "Enviar" : "Submit";
+                btn.className = "px-8 py-3 bg-emerald-500 text-white font-bold rounded shadow hover:bg-emerald-600";
                 btn.disabled = false;
             }
         });

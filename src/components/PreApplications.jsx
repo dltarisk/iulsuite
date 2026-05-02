@@ -187,7 +187,23 @@ export default function PreApplications() {
       );
     };
 
-    const bens = formData.beneficiariesList || [];
+    // Primary: beneficiariesList array (set by new submissions)
+    // Fallback: scan flat ben_n_* fields (handles older submissions or capture edge cases)
+    let bens = (Array.isArray(formData.beneficiariesList) && formData.beneficiariesList.length > 0)
+      ? formData.beneficiariesList
+      : Object.keys(formData)
+          .filter((k) => k.startsWith('ben_n_') && formData[k] && formData[k].trim())
+          .sort((a, b) => parseInt(a.slice(6)) - parseInt(b.slice(6)))
+          .map((k) => {
+            const idx = k.slice(6);
+            return {
+              name: formData[k],
+              relationship: formData[`ben_r_${idx}`] || '',
+              dob: formData[`ben_d_${idx}`] || '',
+              percentage: formData[`ben_p_${idx}`] || '',
+            };
+          });
+
     const knownKeys = new Set([...personal, ...employment, ...insurance, ...skip]);
     const other = Object.entries(formData).filter(
       ([k]) => !knownKeys.has(k) && !k.startsWith('ben_')
