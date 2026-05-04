@@ -52,6 +52,8 @@ export default function AdminPanel() {
   // Commission change form
   const [compChangeAgent, setCompChangeAgent] = useState('');
   const [compChangeRate, setCompChangeRate] = useState('');
+  const [compChangeOverrideRate, setCompChangeOverrideRate] = useState('');
+  const [personalMatchesOverride, setPersonalMatchesOverride] = useState(true);
   const [compChangeDate, setCompChangeDate] = useState(new Date().toISOString().slice(0, 10));
   const [compChangeSaving, setCompChangeSaving] = useState(false);
   const [compChangeHistory, setCompChangeHistory] = useState([]);
@@ -272,26 +274,40 @@ export default function AdminPanel() {
       const newRate = parseFloat(compChangeRate.replace('%', '')) / 100;
       const previousRate = Number(selectedAgent.comp_rate);
 
-      // Record the change
+      // Override rate: if checkbox is checked, override = personal; else use separate input
+      const newOverrideRate = personalMatchesOverride
+        ? newRate
+        : parseFloat(compChangeOverrideRate.replace('%', '')) / 100;
+      const previousOverrideRate =
+        selectedAgent.override_rate != null
+          ? Number(selectedAgent.override_rate)
+          : Number(selectedAgent.comp_rate);
+
+      // Record the change (includes both personal and override rates)
       await supabase.from('comp_rate_changes').insert({
         agent_id: compChangeAgent,
         previous_rate: previousRate,
         new_rate: newRate,
+        previous_override_rate: previousOverrideRate,
+        new_override_rate: newOverrideRate,
         effective_date: compChangeDate,
         changed_by: currentAgent.id,
       });
 
-      // If effective date is today or in the past, also update the agent's current rate
+      // If effective date is today or in the past, update agent's current rates
       const today = new Date().toISOString().slice(0, 10);
       if (compChangeDate <= today) {
         await supabase.from('agents').update({
           comp_rate: newRate,
+          override_rate: newOverrideRate,
           updated_at: new Date().toISOString(),
         }).eq('id', compChangeAgent);
       }
 
       setCompChangeAgent('');
       setCompChangeRate('');
+      setCompChangeOverrideRate('');
+      setPersonalMatchesOverride(true);
       setCompChangeDate(new Date().toISOString().slice(0, 10));
       await loadAll();
     } finally {
@@ -375,7 +391,7 @@ export default function AdminPanel() {
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Role</th>
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Reports To</th>
                 <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">PIN</th>
-                <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Comp Rate</th>
+                <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Personal / Override</th>
                 <th className="text-right py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Ind. Goal</th>
                 <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Active</th>
                 {canDelete && <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>}
@@ -468,7 +484,14 @@ export default function AdminPanel() {
                         </td>
                         <td className="py-3 px-3 text-gray-500">{recruiter?.name || '—'}</td>
                         <td className="py-3 px-3 text-center text-gray-400 tracking-widest">&#8226;&#8226;&#8226;&#8226;</td>
-                        <td className="py-3 px-3 text-center font-bold text-navy">{(Number(a.comp_rate) * 100).toFixed(0)}%</td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="font-bold text-navy">{(Number(a.comp_rate) * 100).toFixed(0)}%</span>
+                          {a.override_rate != null && Number(a.override_rate) !== Number(a.comp_rate) && (
+                            <span className="ml-1.5 text-xs font-semibold text-gold">
+                              / {(Number(a.override_rate) * 100).toFixed(0)}% ovr
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3 px-3 text-right font-bold text-navy">{fmt(a.monthly_goal)}</td>
                         <td className="py-3 px-3 text-center">
                           <span className={`text-sm font-bold ${a.active ? 'text-emerald-600' : 'text-gray-300'}`}>{a.active ? '\u2713' : '—'}</span>
@@ -504,29 +527,72 @@ export default function AdminPanel() {
         <h3 className="font-bold text-navy text-lg mb-2">Commission Rate Change</h3>
         <p className="text-sm text-gray-500 mb-4">Schedule a commission rate change. Deals submitted before the effective date will use the old rate for commission and override calculations.</p>
 
-        <div className="flex flex-wrap items-end gap-4 mb-6">
+        <div className="flex flex-wrap items-end gap-4 mb-4">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Agent</label>
             <select value={compChangeAgent} onChange={(e) => setCompChangeAgent(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-emerald-400 min-w-[180px]">
               <option value="">Select agent...</option>
-              {nonAdminAgents.map((a) => (
-                <option key={a.id} value={a.id}>{a.name} ({(Number(a.comp_rate) * 100).toFixed(0)}%)</option>
-              ))}
+              {nonAdminAgents.map((a) => {
+                const overrideStr = a.override_rate != null && Number(a.override_rate) !== Number(a.comp_rate)
+                  ? ` / ${(Number(a.override_rate) * 100).toFixed(0)}% ovr`
+                  : '';
+                return (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({(Number(a.comp_rate) * 100).toFixed(0)}%{overrideStr})
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div>
-            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">New Rate</label>
+            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Personal Rate</label>
             <input type="text" value={compChangeRate} onChange={(e) => setCompChangeRate(e.target.value)}
-              placeholder="e.g. 60%"
+              placeholder="e.g. 80%"
               className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm font-bold text-navy focus:outline-none focus:border-emerald-400" />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Override Rate</label>
+            <input
+              type="text"
+              value={personalMatchesOverride ? compChangeRate : compChangeOverrideRate}
+              onChange={(e) => setCompChangeOverrideRate(e.target.value)}
+              placeholder="e.g. 70%"
+              disabled={personalMatchesOverride}
+              className={`w-24 border rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:border-emerald-400 ${
+                personalMatchesOverride
+                  ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                  : 'border-gray-300 text-navy'
+              }`}
+            />
+          </div>
+          <div className="pb-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none text-sm text-gray-600">
+              <input
+                type="checkbox"
+                checked={personalMatchesOverride}
+                onChange={(e) => {
+                  setPersonalMatchesOverride(e.target.checked);
+                  if (e.target.checked) setCompChangeOverrideRate('');
+                }}
+                className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
+              />
+              Personal matches override
+            </label>
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase block mb-1">Effective Date</label>
             <input type="date" value={compChangeDate} onChange={(e) => setCompChangeDate(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-400" />
           </div>
-          <button onClick={submitCompChange} disabled={compChangeSaving || !compChangeAgent || !compChangeRate}
+          <button
+            onClick={submitCompChange}
+            disabled={
+              compChangeSaving ||
+              !compChangeAgent ||
+              !compChangeRate ||
+              (!personalMatchesOverride && !compChangeOverrideRate)
+            }
             className="px-5 py-2 bg-emerald-500 text-white text-sm font-semibold rounded-lg hover:bg-emerald-600 disabled:opacity-50">
             {compChangeSaving ? 'Saving...' : 'Apply Change'}
           </button>
@@ -540,8 +606,10 @@ export default function AdminPanel() {
                 <thead>
                   <tr className="border-b-2 border-gray-200">
                     <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Agent</th>
-                    <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase">From</th>
-                    <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase">To</th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Personal From</th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Personal To</th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Override From</th>
+                    <th className="text-center py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Override To</th>
                     <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Effective</th>
                     <th className="text-left py-2 px-3 text-xs font-semibold text-gray-500 uppercase">Changed By</th>
                   </tr>
@@ -552,6 +620,12 @@ export default function AdminPanel() {
                       <td className="py-2 px-3 font-medium text-navy">{c.agent?.name}</td>
                       <td className="py-2 px-3 text-center text-gray-500">{(Number(c.previous_rate) * 100).toFixed(0)}%</td>
                       <td className="py-2 px-3 text-center font-bold text-navy">{(Number(c.new_rate) * 100).toFixed(0)}%</td>
+                      <td className="py-2 px-3 text-center text-gray-500">
+                        {c.previous_override_rate != null ? `${(Number(c.previous_override_rate) * 100).toFixed(0)}%` : '—'}
+                      </td>
+                      <td className="py-2 px-3 text-center font-bold text-navy">
+                        {c.new_override_rate != null ? `${(Number(c.new_override_rate) * 100).toFixed(0)}%` : '—'}
+                      </td>
                       <td className="py-2 px-3 text-gray-500">{c.effective_date}</td>
                       <td className="py-2 px-3 text-gray-400">{c.changer?.name || '—'}</td>
                     </tr>

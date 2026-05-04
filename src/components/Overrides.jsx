@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from './StatusBadge';
-import { fmt, calcOverride, getEffectiveRate, CAR } from '../utils/commission';
+import { fmt, calcOverride, getEffectiveRate, getEffectiveOverrideRate, CAR } from '../utils/commission';
 
 /**
  * Get all descendant agent IDs for a given agent (recursive downline).
@@ -142,12 +142,12 @@ export default function Overrides() {
       const dealAgent = agentsById.get(dealAgentId);
       const { directChild } = downline.get(dealAgentId);
 
-      // Get effective rates at time of deal submission
+      // Get effective OVERRIDE rates at time of deal submission
       const dateStr = deal.date_submitted || '';
-      const headRate = getEffectiveRate(headAgent, dateStr, compRateChanges);
-      const directChildRate = getEffectiveRate(directChild, dateStr, compRateChanges);
+      const headRate = getEffectiveOverrideRate(headAgent, dateStr, compRateChanges);
+      const directChildRate = getEffectiveOverrideRate(directChild, dateStr, compRateChanges);
 
-      // Override = AP × CAR × (head rate - direct child rate)
+      // Override = AP × CAR × (head override rate - direct child override rate)
       const overridePct = headRate - directChildRate;
       const override = deal.ap * CAR * overridePct;
       const isIssued = deal.status === 'Issued' || deal.status === 'Issued Paid';
@@ -207,7 +207,7 @@ export default function Overrides() {
 
   if (loading) return <div className="text-center py-12 text-gray-400">Loading...</div>;
 
-  const headRate = getEffectiveRate(headAgent, new Date().toISOString().slice(0, 10), compRateChanges);
+  const headOverrideRate = getEffectiveOverrideRate(headAgent, new Date().toISOString().slice(0, 10), compRateChanges);
 
   function formatMonth(ym) {
     const [y, m] = ym.split('-');
@@ -220,8 +220,8 @@ export default function Overrides() {
       <div className="flex items-center justify-between">
         <h2 className="font-bold text-navy text-lg">Override Income</h2>
         <div className="text-sm text-gray-500">
-          {isAdmin ? `Viewing as ${headAgent.name}` : 'Your rate'}:{' '}
-          <span className="font-bold text-navy">{(headRate * 100).toFixed(0)}%</span>
+          {isAdmin ? `Viewing as ${headAgent.name}` : 'Your override rate'}:{' '}
+          <span className="font-bold text-navy">{(headOverrideRate * 100).toFixed(0)}%</span>
         </div>
       </div>
 

@@ -48,6 +48,41 @@ export function getEffectiveRate(agent, dateStr, compRateChanges) {
   return effectiveRate;
 }
 
+/**
+ * Get the effective override rate for an agent at a given date.
+ * Uses override_rate column and new_override_rate from change history.
+ * Falls back to personal comp_rate when override_rate is null (they match).
+ */
+export function getEffectiveOverrideRate(agent, dateStr, compRateChanges) {
+  // If override_rate is null it means override = personal (they have always matched)
+  const currentOverride = agent.override_rate != null ? Number(agent.override_rate) : Number(agent.comp_rate);
+
+  if (!compRateChanges || compRateChanges.length === 0) return currentOverride;
+
+  const agentChanges = compRateChanges
+    .filter((c) => c.agent_id === agent.id && c.new_override_rate != null)
+    .sort((a, b) => a.effective_date.localeCompare(b.effective_date));
+
+  if (agentChanges.length === 0) return currentOverride;
+
+  // Start with rate before the first override-specific change
+  const firstChange = agentChanges[0];
+  let effectiveRate =
+    firstChange.previous_override_rate != null
+      ? Number(firstChange.previous_override_rate)
+      : currentOverride;
+
+  for (const change of agentChanges) {
+    if (dateStr >= change.effective_date) {
+      effectiveRate = Number(change.new_override_rate);
+    } else {
+      break;
+    }
+  }
+
+  return effectiveRate;
+}
+
 export function calcOverride(ap, headRate, subRate, isNY) {
   if (isNY) return 0; // No overrides for NY policies
   return (headRate - subRate) * ap * CAR;
