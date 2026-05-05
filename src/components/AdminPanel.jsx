@@ -185,19 +185,23 @@ export default function AdminPanel() {
       }
 
       for (const ea of editedAgents) {
-        const compNum = parseFloat(ea.comp_rate_display.replace('%', '')) / 100;
-        const overrideNum = parseFloat((ea.override_rate_display || ea.comp_rate_display).replace('%', '')) / 100;
         const goalVal = parseInt(ea.goal_display.replace(/\D/g, ''));
 
+        // Rates are NOT editable for existing agents — only via Commission Rate Change form
         const updates = {
-          name: ea.name, role: ea.role, comp_rate: compNum,
-          override_rate: overrideNum,
+          name: ea.name, role: ea.role,
           monthly_goal: goalVal || 0, active: ea.active,
           recruiter_id: ea.recruiter_id || null,
           agent_code: ea.agent_code || null,
           email: ea.email || null,
           updated_at: new Date().toISOString(),
         };
+
+        // For NEW agents only, set the initial rates from the input fields
+        if (!ea.id) {
+          updates.comp_rate = parseFloat(ea.comp_rate_display.replace('%', '')) / 100;
+          updates.override_rate = parseFloat((ea.override_rate_display || ea.comp_rate_display).replace('%', '')) / 100;
+        }
 
         if (ea.pin && ea.pin.length === 4) {
           try {
@@ -460,13 +464,25 @@ export default function AdminPanel() {
                           className="w-20 text-center border border-gray-300 rounded-lg px-2 py-1.5 text-sm font-bold text-navy focus:outline-none focus:border-emerald-400" />
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <input type="text" value={a.comp_rate_display} onChange={(e) => updateEditedAgent(idx, 'comp_rate_display', e.target.value)}
-                          className="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-navy focus:outline-none focus:border-emerald-400" />
+                        {a.id ? (
+                          <span className="font-bold text-navy text-sm" title="Change via Commission Rate Change below">
+                            {a.comp_rate_display}
+                          </span>
+                        ) : (
+                          <input type="text" value={a.comp_rate_display} onChange={(e) => updateEditedAgent(idx, 'comp_rate_display', e.target.value)}
+                            className="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-navy focus:outline-none focus:border-emerald-400" />
+                        )}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <input type="text" value={a.override_rate_display} onChange={(e) => updateEditedAgent(idx, 'override_rate_display', e.target.value)}
-                          placeholder="same"
-                          className="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-gold focus:outline-none focus:border-gold" />
+                        {a.id ? (
+                          <span className="font-bold text-gold text-sm" title="Change via Commission Rate Change below">
+                            {a.override_rate_display}
+                          </span>
+                        ) : (
+                          <input type="text" value={a.override_rate_display} onChange={(e) => updateEditedAgent(idx, 'override_rate_display', e.target.value)}
+                            placeholder="same"
+                            className="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-gold focus:outline-none focus:border-gold" />
+                        )}
                       </td>
                       <td className="py-3 px-3 text-right">
                         <input type="text" value={a.goal_display} onChange={(e) => updateEditedAgent(idx, 'goal_display', e.target.value)}
