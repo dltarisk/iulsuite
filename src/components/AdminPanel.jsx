@@ -82,12 +82,16 @@ export default function AdminPanel() {
     setEditedGoal(String(teamGoal));
     setEditedMonth(goalMonth);
     setEditedAgents(
-      agents.filter((a) => a.role !== 'admin').map((a) => ({
-        ...a,
-        pin: '',
-        comp_rate_display: `${(Number(a.comp_rate) * 100).toFixed(0)}%`,
-        goal_display: String(a.monthly_goal),
-      }))
+      agents.filter((a) => a.role !== 'admin').map((a) => {
+        const overrideVal = a.override_rate != null ? Number(a.override_rate) : Number(a.comp_rate);
+        return {
+          ...a,
+          pin: '',
+          comp_rate_display: `${(Number(a.comp_rate) * 100).toFixed(0)}%`,
+          override_rate_display: `${(overrideVal * 100).toFixed(0)}%`,
+          goal_display: String(a.monthly_goal),
+        };
+      })
     );
   };
 
@@ -116,6 +120,7 @@ export default function AdminPanel() {
       {
         id: null, name: '', role: 'agent', recruiter_id: null,
         pin: '', comp_rate: 0.5, comp_rate_display: '50%',
+        override_rate: null, override_rate_display: '50%',
         monthly_goal: 20000, goal_display: '20000', active: true,
         agent_code: nextCode, email: '',
       },
@@ -180,10 +185,12 @@ export default function AdminPanel() {
 
       for (const ea of editedAgents) {
         const compNum = parseFloat(ea.comp_rate_display.replace('%', '')) / 100;
+        const overrideNum = parseFloat((ea.override_rate_display || ea.comp_rate_display).replace('%', '')) / 100;
         const goalVal = parseInt(ea.goal_display.replace(/\D/g, ''));
 
         const updates = {
           name: ea.name, role: ea.role, comp_rate: compNum,
+          override_rate: overrideNum,
           monthly_goal: goalVal || 0, active: ea.active,
           recruiter_id: ea.recruiter_id || null,
           agent_code: ea.agent_code || null,
@@ -391,7 +398,8 @@ export default function AdminPanel() {
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Role</th>
                 <th className="text-left py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Reports To</th>
                 <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">PIN</th>
-                <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Personal / Override</th>
+                <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Personal</th>
+                <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Override</th>
                 <th className="text-right py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Ind. Goal</th>
                 <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Active</th>
                 {canDelete && <th className="text-center py-3 px-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>}
@@ -439,6 +447,11 @@ export default function AdminPanel() {
                         <input type="text" value={a.comp_rate_display} onChange={(e) => updateEditedAgent(idx, 'comp_rate_display', e.target.value)}
                           className="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-navy focus:outline-none focus:border-emerald-400" />
                       </td>
+                      <td className="py-3 px-3 text-center">
+                        <input type="text" value={a.override_rate_display} onChange={(e) => updateEditedAgent(idx, 'override_rate_display', e.target.value)}
+                          placeholder="same"
+                          className="w-16 text-center border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-gold focus:outline-none focus:border-gold" />
+                      </td>
                       <td className="py-3 px-3 text-right">
                         <input type="text" value={a.goal_display} onChange={(e) => updateEditedAgent(idx, 'goal_display', e.target.value)}
                           className="w-28 text-right border border-gray-300 rounded-lg px-2 py-1 text-sm font-bold text-navy focus:outline-none focus:border-emerald-400" />
@@ -484,13 +497,13 @@ export default function AdminPanel() {
                         </td>
                         <td className="py-3 px-3 text-gray-500">{recruiter?.name || '—'}</td>
                         <td className="py-3 px-3 text-center text-gray-400 tracking-widest">&#8226;&#8226;&#8226;&#8226;</td>
-                        <td className="py-3 px-3 text-center">
-                          <span className="font-bold text-navy">{(Number(a.comp_rate) * 100).toFixed(0)}%</span>
-                          {a.override_rate != null && Number(a.override_rate) !== Number(a.comp_rate) && (
-                            <span className="ml-1.5 text-xs font-semibold text-gold">
-                              / {(Number(a.override_rate) * 100).toFixed(0)}% ovr
-                            </span>
-                          )}
+                        <td className="py-3 px-3 text-center font-bold text-navy">
+                          {(Number(a.comp_rate) * 100).toFixed(0)}%
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold text-gold">
+                          {a.override_rate != null
+                            ? `${(Number(a.override_rate) * 100).toFixed(0)}%`
+                            : `${(Number(a.comp_rate) * 100).toFixed(0)}%`}
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-navy">{fmt(a.monthly_goal)}</td>
                         <td className="py-3 px-3 text-center">
