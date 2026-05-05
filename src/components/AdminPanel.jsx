@@ -56,6 +56,7 @@ export default function AdminPanel() {
   const [personalMatchesOverride, setPersonalMatchesOverride] = useState(true);
   const [compChangeDate, setCompChangeDate] = useState(new Date().toISOString().slice(0, 10));
   const [compChangeSaving, setCompChangeSaving] = useState(false);
+  const [compChangeError, setCompChangeError] = useState('');
   const [compChangeHistory, setCompChangeHistory] = useState([]);
 
   const monthOptions = getMonthOptions();
@@ -274,6 +275,7 @@ export default function AdminPanel() {
   const submitCompChange = async () => {
     if (!compChangeAgent || !compChangeRate || !compChangeDate) return;
     setCompChangeSaving(true);
+    setCompChangeError('');
     try {
       const selectedAgent = agents.find((a) => a.id === compChangeAgent);
       if (!selectedAgent) return;
@@ -291,7 +293,7 @@ export default function AdminPanel() {
           : Number(selectedAgent.comp_rate);
 
       // Record the change (includes both personal and override rates)
-      await supabase.from('comp_rate_changes').insert({
+      const { error: insertErr } = await supabase.from('comp_rate_changes').insert({
         agent_id: compChangeAgent,
         previous_rate: previousRate,
         new_rate: newRate,
@@ -300,15 +302,26 @@ export default function AdminPanel() {
         effective_date: compChangeDate,
         changed_by: currentAgent.id,
       });
+      if (insertErr) {
+        console.error('[AdminPanel] comp_rate_changes insert error:', insertErr);
+        setCompChangeError(`Failed to record change: ${insertErr.message}`);
+        return;
+      }
 
       // If effective date is today or in the past, update agent's current rates
       const today = new Date().toISOString().slice(0, 10);
       if (compChangeDate <= today) {
-        await supabase.from('agents').update({
+        const { error: updateErr } = await supabase.from('agents').update({
           comp_rate: newRate,
           override_rate: newOverrideRate,
           updated_at: new Date().toISOString(),
         }).eq('id', compChangeAgent);
+        if (updateErr) {
+          console.error('[AdminPanel] agent update error:', updateErr);
+          setCompChangeError(`Change recorded but agent update failed: ${updateErr.message}`);
+          await loadAll();
+          return;
+        }
       }
 
       setCompChangeAgent('');
@@ -317,6 +330,9 @@ export default function AdminPanel() {
       setPersonalMatchesOverride(true);
       setCompChangeDate(new Date().toISOString().slice(0, 10));
       await loadAll();
+    } catch (e) {
+      console.error('[AdminPanel] submitCompChange exception:', e);
+      setCompChangeError(`Unexpected error: ${e.message}`);
     } finally {
       setCompChangeSaving(false);
     }
@@ -539,6 +555,13 @@ export default function AdminPanel() {
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h3 className="font-bold text-navy text-lg mb-2">Commission Rate Change</h3>
         <p className="text-sm text-gray-500 mb-4">Schedule a commission rate change. Deals submitted before the effective date will use the old rate for commission and override calculations.</p>
+
+        {compChangeError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-start justify-between gap-3">
+            <div className="flex-1"><strong className="block mb-1">⚠️ Error</strong>{compChangeError}</div>
+            <button onClick={() => setCompChangeError('')} className="text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-end gap-4 mb-4">
           <div>
