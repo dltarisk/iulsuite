@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import DonutChart from './DonutChart';
 import ProgressBar from './ProgressBar';
 import PoliciesNeeded from './PoliciesNeeded';
-import { fmt, calcCommission, COMMISSION_TIERS } from '../utils/commission';
+import { fmt, calcCommissionWithHistory, COMMISSION_TIERS } from '../utils/commission';
 
 /**
  * Get all descendant IDs of an agent (recursive downline).
@@ -34,20 +34,23 @@ export default function MyDashboard() {
   const [deals, setDeals] = useState([]);
   const [allDeals, setAllDeals] = useState([]);
   const [allAgents, setAllAgents] = useState([]);
+  const [compRateChanges, setCompRateChanges] = useState([]);
   const [goalMonth, setGoalMonth] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [myDealsRes, allDealsRes, agentsRes, settingsRes] = await Promise.all([
+      const [myDealsRes, allDealsRes, agentsRes, settingsRes, changesRes] = await Promise.all([
         supabase.from('deals').select('*').eq('agent_id', agent.id),
         supabase.from('deals').select('*'),
         supabase.from('agents').select('*'),
         supabase.from('team_settings').select('goal_month').single(),
+        supabase.from('comp_rate_changes').select('*').eq('agent_id', agent.id),
       ]);
       if (myDealsRes.data) setDeals(myDealsRes.data);
       if (allDealsRes.data) setAllDeals(allDealsRes.data);
       if (agentsRes.data) setAllAgents(agentsRes.data);
+      if (changesRes.data) setCompRateChanges(changesRes.data);
       if (settingsRes.data) setGoalMonth(settingsRes.data.goal_month || '');
       setLoading(false);
     }
@@ -71,7 +74,7 @@ export default function MyDashboard() {
   const remaining = Math.max(agent.monthly_goal - issuedAP, 0);
   const commIssued = monthDeals
     .filter((d) => d.status === 'Issued' || d.status === 'Issued Paid')
-    .reduce((s, d) => s + calcCommission(d.ap, Number(agent.comp_rate), d.is_ny), 0);
+    .reduce((s, d) => s + calcCommissionWithHistory(d.ap, agent, d.is_ny, d.date_submitted, compRateChanges), 0);
 
   // Commission Tier Progress
   // 2-month window: current month + previous month

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from './StatusBadge';
-import { fmt, calcCommission } from '../utils/commission';
+import { fmt, calcCommissionWithHistory } from '../utils/commission';
 import { US_STATES } from '../utils/states';
 
 const STATUSES = ['Submitted', 'Issued', 'Issued Paid', 'Declined'];
@@ -47,14 +47,15 @@ export default function MyDeals() {
 
   const [filterStatus, setFilterStatus] = useState('hide-declined');
   const [filterMonth, setFilterMonth] = useState('');
+  const [compRateChanges, setCompRateChanges] = useState([]);
 
   const loadDeals = useCallback(async () => {
-    const { data } = await supabase
-      .from('deals')
-      .select('*')
-      .eq('agent_id', agent.id)
-      .order('date_submitted', { ascending: false });
-    if (data) setDeals(data);
+    const [dealsRes, changesRes] = await Promise.all([
+      supabase.from('deals').select('*').eq('agent_id', agent.id).order('date_submitted', { ascending: false }),
+      supabase.from('comp_rate_changes').select('*').eq('agent_id', agent.id),
+    ]);
+    if (dealsRes.data) setDeals(dealsRes.data);
+    if (changesRes.data) setCompRateChanges(changesRes.data);
     setLoading(false);
   }, [supabase, agent.id]);
 
@@ -73,15 +74,15 @@ export default function MyDeals() {
     return result;
   }, [deals, filterStatus, filterMonth]);
 
-  // Totals for filtered deals
+  // Totals for filtered deals — use rate effective at deal submission date
   const totals = useMemo(() => {
     let ap = 0, comm = 0;
     for (const d of filteredDeals) {
       ap += d.ap;
-      comm += calcCommission(d.ap, Number(agent.comp_rate), d.is_ny);
+      comm += calcCommissionWithHistory(d.ap, agent, d.is_ny, d.date_submitted, compRateChanges);
     }
     return { ap, comm };
-  }, [filteredDeals, agent.comp_rate]);
+  }, [filteredDeals, agent, compRateChanges]);
 
   const loadNotes = useCallback(async (dealId) => {
     const { data } = await supabase
@@ -391,10 +392,12 @@ export default function MyDeals() {
               )}
               {filteredDeals.map((d, i) => {
                 const isEditing = editingDeal === d.id;
-                const comm = calcCommission(
+                const comm = calcCommissionWithHistory(
                   isEditing ? parseInt(editForm.ap) || 0 : d.ap,
-                  Number(agent.comp_rate),
-                  isEditing ? editForm.is_ny : d.is_ny
+                  agent,
+                  isEditing ? editForm.is_ny : d.is_ny,
+                  d.date_submitted,
+                  compRateChanges
                 );
                 const open = expandedDeal === d.id;
                 const dealNotes = notes[d.id] || [];
