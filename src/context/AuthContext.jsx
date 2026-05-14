@@ -48,6 +48,7 @@ export function AuthProvider({ children }) {
     setToken(null);
     setAgent(null);
     sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = '/';
   }, []);
 
   const value = useMemo(
