@@ -14,6 +14,7 @@ export default function LoginScreen() {
     supabasePublic
       .from('agents')
       .select('id, name')
+      .eq('active', true)
       .order('name')
       .then(({ data }) => {
         if (data) setAgents(data);
