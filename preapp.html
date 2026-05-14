@@ -29,7 +29,40 @@
         }
     </script>
 </head>
-<body class="bg-nord-bg text-nord-text font-sans p-4 md:p-8">
+<body class="bg-nord-bg text-nord-text font-sans">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login_screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 w-full max-w-sm">
+            <div class="text-center mb-6">
+                <div class="text-4xl mb-3">🛡️</div>
+                <h1 class="text-2xl font-bold text-navy">Agent Login</h1>
+                <p class="text-gray-500 text-sm mt-1">Sign in to access the client portal</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-sm font-semibold text-gray-600 block mb-1">Your Name</label>
+                    <select id="login_agent_select" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-50 focus:outline-none focus:border-emerald-400">
+                        <option value="">Loading agents...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm font-semibold text-gray-600 block mb-1">PIN</label>
+                    <input type="password" id="login_pin" maxlength="4" placeholder="••••" inputmode="numeric"
+                        class="w-full border border-gray-300 rounded-lg p-3 text-center text-2xl tracking-widest font-bold text-navy focus:outline-none focus:border-emerald-400"
+                        onkeydown="if(event.key==='Enter') doLogin()">
+                </div>
+                <div id="login_error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3"></div>
+                <button id="login_btn" onclick="doLogin()"
+                    class="w-full py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-600 transition text-sm">
+                    Sign In
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP (hidden until authenticated) -->
+    <div id="main_app" class="hidden p-4 md:p-8">
     <div class="max-w-5xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-lg border border-gray-100 relative">
         <!-- HEADER & NAV -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b pb-4">
@@ -37,7 +70,12 @@
                 <h1 class="text-3xl font-bold text-navy" id="main_title">Client Pre-Application</h1>
                 <p class="text-gray-500 mt-2" id="main_subtitle">Complete all details for the client file.</p>
             </div>
-            <div class="mt-4 md:mt-0 flex gap-4">
+            <div class="mt-4 md:mt-0 flex flex-wrap items-center gap-3">
+                <span class="text-sm text-gray-500">
+                    Signed in as <strong id="logged_in_name" class="text-navy"></strong>
+                    &nbsp;·&nbsp;
+                    <button onclick="signOut()" class="text-red-500 hover:text-red-700 font-semibold text-sm">Sign out</button>
+                </span>
                 <select id="lang_toggle" class="border rounded p-2 text-sm bg-gray-50" onchange="toggleLanguage()">
                     <option value="en">English</option>
                     <option value="es">Español</option>
@@ -286,18 +324,122 @@
             </div>
         </div>
     </div>
+    </div> <!-- /main_app -->
 
     <script>
         // --- SUPABASE CONFIG ---
         const SUPABASE_URL = 'https://xjhtjvokuorgrmuzoyrc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqaHRqdm9rdW9yZ3JtdXpveXJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NjI4NzcsImV4cCI6MjA5MDIzODg3N30.S1lRzbY11IQ2nTYkHuNqaH2BixDAehSE45UGa120YEE';
+        const FUNCTIONS_URL = `${SUPABASE_URL}/functions/v1`;
 
         // Optional URL param: ?agent=<agent_code> auto-selects dropdown but user can override
         const urlParams = new URLSearchParams(window.location.search);
         const agentCodeFromUrl = urlParams.get('agent') || '';
 
-        // Load agents from Supabase to populate dropdown.
-        // Source of truth for pre-app assignment = whatever the user picks here.
+        // --- AUTH ---
+        let currentAgent = null;
+        let currentToken = null;
+
+        async function loadLoginAgents() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/agents?active=eq.true&role=neq.admin&select=id,name&order=name`, {
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                });
+                const agents = await res.json();
+                const sel = document.getElementById('login_agent_select');
+                sel.innerHTML = '<option value="">Select your name...</option>';
+                agents.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.name;
+                    sel.appendChild(opt);
+                });
+            } catch(e) {
+                console.error('Failed to load agents for login:', e);
+            }
+        }
+
+        async function doLogin() {
+            const agentId = document.getElementById('login_agent_select').value;
+            const pin = document.getElementById('login_pin').value;
+            const errEl = document.getElementById('login_error');
+            const btn = document.getElementById('login_btn');
+
+            if (!agentId || pin.length !== 4) {
+                errEl.textContent = 'Please select your name and enter your 4-digit PIN.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+            errEl.classList.add('hidden');
+
+            try {
+                const res = await fetch(`${FUNCTIONS_URL}/pin-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+                    body: JSON.stringify({ agent_id: agentId, pin }),
+                });
+                const data = await res.json();
+
+                if (!res.ok || data.error) {
+                    errEl.textContent = data.error || 'Incorrect PIN. Please try again.';
+                    errEl.classList.remove('hidden');
+                    document.getElementById('login_pin').value = '';
+                    document.getElementById('login_pin').focus();
+                    return;
+                }
+
+                currentAgent = data.agent;
+                currentToken = data.token;
+                sessionStorage.setItem('preapp_session', JSON.stringify({ agent: data.agent, token: data.token }));
+                showApp();
+            } catch(e) {
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        }
+
+        function showApp() {
+            document.getElementById('login_screen').classList.add('hidden');
+            document.getElementById('main_app').classList.remove('hidden');
+            document.getElementById('logged_in_name').textContent = currentAgent.name;
+            loadAgents();
+        }
+
+        function signOut() {
+            sessionStorage.removeItem('preapp_session');
+            currentAgent = null;
+            currentToken = null;
+            document.getElementById('login_pin').value = '';
+            document.getElementById('login_error').classList.add('hidden');
+            document.getElementById('main_app').classList.add('hidden');
+            document.getElementById('login_screen').classList.remove('hidden');
+        }
+
+        // Check for existing session on page load
+        (function initAuth() {
+            const stored = sessionStorage.getItem('preapp_session');
+            if (stored) {
+                try {
+                    const session = JSON.parse(stored);
+                    currentAgent = session.agent;
+                    currentToken = session.token;
+                    showApp();
+                    return;
+                } catch(e) { sessionStorage.removeItem('preapp_session'); }
+            }
+            // No session — show login screen
+            document.getElementById('login_screen').classList.remove('hidden');
+            loadLoginAgents();
+        })();
+
+        // Load agents from Supabase to populate the recipient dropdown.
+        // Auto-selects the logged-in agent; URL param is a fallback.
         async function loadAgents() {
             try {
                 const res = await fetch(`${SUPABASE_URL}/rest/v1/agents?active=eq.true&role=neq.admin&select=id,name,agent_code,email&order=name`, {
@@ -308,10 +450,13 @@
                 sel.innerHTML = '<option value="">Select Agent...</option>';
                 agents.forEach(a => {
                     const opt = document.createElement('option');
-                    // Format: name|email|agent_code|id — all fields needed for routing & portal linking
+                    // Format: name|email|agent_code|id
                     opt.value = `${a.name}|${a.email || ''}|${a.agent_code || ''}|${a.id}`;
                     opt.textContent = a.name;
-                    if (agentCodeFromUrl && a.agent_code && a.agent_code === agentCodeFromUrl) {
+                    // Auto-select: logged-in agent takes priority over URL param
+                    if (currentAgent && a.id === currentAgent.id) {
+                        opt.selected = true;
+                    } else if (!currentAgent && agentCodeFromUrl && a.agent_code === agentCodeFromUrl) {
                         opt.selected = true;
                     }
                     sel.appendChild(opt);
@@ -320,7 +465,6 @@
                 console.error('Failed to load agents:', e);
             }
         }
-        loadAgents();
 
         // Save pre-app to Supabase.
         // Assignment is driven ENTIRELY by the recipient dropdown selection.
