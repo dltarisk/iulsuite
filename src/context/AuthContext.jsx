@@ -3,9 +3,18 @@ import { createSupabaseClient, FUNCTIONS_URL, ANON_KEY } from '../supabaseClient
 
 const AuthContext = createContext(null);
 
+const SESSION_KEY = 'preapp_session';
+
+function readSession() {
+  try {
+    const s = sessionStorage.getItem(SESSION_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(null);
-  const [agent, setAgent] = useState(null);
+  const [token, setToken] = useState(() => readSession()?.token ?? null);
+  const [agent, setAgent] = useState(() => readSession()?.agent ?? null);
 
   const supabase = useMemo(
     () => createSupabaseClient(token),
@@ -31,12 +40,14 @@ export function AuthProvider({ children }) {
     const data = await res.json();
     setToken(data.token);
     setAgent(data.agent);
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token: data.token, agent: data.agent }));
     return data.agent;
   }, []);
 
   const logout = useCallback(() => {
     setToken(null);
     setAgent(null);
+    sessionStorage.removeItem(SESSION_KEY);
   }, []);
 
   const value = useMemo(
